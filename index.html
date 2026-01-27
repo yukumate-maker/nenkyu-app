@@ -11,19 +11,42 @@
 <meta name="theme-color" content="#2c7be5">
 
 <style>
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;background:#f0f2f5}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  background:#f0f2f5
+}
 .container{max-width:480px;margin:auto;padding:14px}
-.card{background:#fff;border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,.05)
+}
 h2{text-align:center;margin:8px 0 16px;color:#2c7be5}
 h3{margin:0 0 8px;font-size:15px}
-input,select,button{width:100%;padding:12px;font-size:15px;border-radius:12px;border:1px solid #ccc;margin-top:8px}
+input,select,button{
+  width:100%;
+  padding:12px;
+  font-size:15px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  margin-top:8px
+}
 button{border:none;font-weight:600}
 .primary{background:#2c7be5;color:#fff}
 .sub{background:#6c757d;color:#fff}
 .danger{background:#dc3545;color:#fff}
 .row{display:flex;gap:8px}
 .row > *{flex:1}
-.history{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #eee;font-size:14px}
+.history{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 4px;
+  border-bottom:1px solid #eee;
+  font-size:14px
+}
 .history:hover{background:#f8f9fa}
 </style>
 </head>
@@ -34,135 +57,180 @@ button{border:none;font-weight:600}
 
 <!-- 初期設定 -->
 <div class="card" id="setup">
-<h3>初期設定</h3>
-<input id="name" placeholder="名前">
-<input id="days" type="number" placeholder="初期年休日数（例：20）">
-<button class="primary" onclick="saveSetup()">開始</button>
+  <h3>初期設定</h3>
+  <input id="name" placeholder="名前">
+  <input id="days" type="number" placeholder="初期年休日数（例：20）">
+  <button class="primary" onclick="saveSetup()">開始</button>
 </div>
 
 <!-- メイン -->
 <div id="main" style="display:none">
 
-<div class="card" style="text-align:center">
-<h3>残日数</h3>
-<b id="remain" style="font-size:22px"></b>
-</div>
+  <div class="card" style="text-align:center">
+    <h3>残日数</h3>
+    <b id="remain" style="font-size:22px"></b>
+  </div>
 
-<div class="card">
-<h3>年休取得</h3>
-<input type="date" id="date">
-<div class="row">
-<input type="time" id="start">
-<input type="time" id="end">
-</div>
-<select id="workSelect"></select>
-<select id="breakSelect"></select>
-<button class="primary" onclick="useLeave()">登録</button>
-</div>
+  <div class="card">
+    <h3>年休取得</h3>
+    <input type="date" id="date">
+    <div class="row">
+      <input type="time" id="start">
+      <input type="time" id="end">
+    </div>
+    <select id="workSelect"></select>
+    <select id="breakSelect"></select>
+    <button class="primary" onclick="useLeave()">登録</button>
+  </div>
 
-<div class="card">
-<h3>使用履歴（タップで削除）</h3>
-<div id="history"></div>
-</div>
+  <div class="card">
+    <h3>使用履歴（タップで削除）</h3>
+    <div id="history"></div>
+  </div>
 
-<div class="card">
-<button class="sub" onclick="openAdmin()">管理者設定</button>
-<button class="danger" style="margin-top:12px" onclick="resetUser()">初期設定をやり直す</button>
-</div>
+  <div class="card">
+    <button class="sub" onclick="openAdmin()">管理者設定</button>
+    <button class="danger" style="margin-top:12px" onclick="resetUser()">初期設定をやり直す</button>
+  </div>
 
 </div>
 </div>
 
 <script>
-const DAY_MIN=465;
-const $=id=>document.getElementById(id);
+/* ===== 基本設定 ===== */
+const DAY_MIN = 465;
+const $ = id => document.getElementById(id);
 
-let user=JSON.parse(localStorage.getItem("user"));
-const works=JSON.parse(localStorage.getItem("works")||"[]");
-const breaks=JSON.parse(localStorage.getItem("breaks")||"[]");
+/* ===== データ読込 ===== */
+let user = JSON.parse(localStorage.getItem("user"));
+const works = JSON.parse(localStorage.getItem("works") || "[]");
+const breaks = JSON.parse(localStorage.getItem("breaks") || "[]");
 
 if(user) start();
 
+/* ===== 初期設定 ===== */
 function saveSetup(){
-  if(!name.value||!days.value)return alert("入力してください");
-  user={name:name.value,total:days.value*DAY_MIN,history:[]};
-  localStorage.setItem("user",JSON.stringify(user));
+  const nameVal = $("name").value;
+  const daysVal = $("days").value;
+
+  if(nameVal === "" || daysVal === ""){
+    alert("入力してください");
+    return;
+  }
+
+  user = {
+    name: nameVal,
+    total: Number(daysVal) * DAY_MIN,
+    history: []
+  };
+
+  localStorage.setItem("user", JSON.stringify(user));
   start();
 }
 
+/* ===== 起動 ===== */
 function start(){
-  setup.style.display="none";
-  main.style.display="block";
-  title.textContent=`${user.name}さんの年休`;
+  $("setup").style.display = "none";
+  $("main").style.display = "block";
+  $("title").textContent = `${user.name}さんの年休`;
   loadSelects();
   render();
 }
 
+/* ===== セレクト読込 ===== */
 function loadSelects(){
-  workSelect.innerHTML="";
+  $("workSelect").innerHTML = "";
   works.forEach((w,i)=>{
-    workSelect.innerHTML+=`<option value="${i}">${w.name} ${w.start}〜${w.end}</option>`;
+    $("workSelect").innerHTML +=
+      `<option value="${i}">${w.name} ${w.start}〜${w.end}</option>`;
   });
-  breakSelect.innerHTML='<option value="">休憩なし</option>';
+
+  $("breakSelect").innerHTML = '<option value="">休憩なし</option>';
   breaks.forEach((b,i)=>{
-    breakSelect.innerHTML+=`<option value="${i}">${b.name} ${b.start}〜${b.end}</option>`;
+    $("breakSelect").innerHTML +=
+      `<option value="${i}">${b.name} ${b.start}〜${b.end}</option>`;
   });
 }
 
-function toMin(t){const[a,b]=t.split(":").map(Number);return a*60+b}
-function overlap(a,b,c,d){return Math.max(0,Math.min(b,d)-Math.max(a,c))}
+/* ===== 時間計算 ===== */
+function toMin(t){
+  const [h,m] = t.split(":").map(Number);
+  return h*60+m;
+}
+function overlap(a,b,c,d){
+  return Math.max(0, Math.min(b,d) - Math.max(a,c));
+}
 
+/* ===== 年休取得 ===== */
 function useLeave(){
-  if(!date.value||!start.value||!end.value)return alert("未入力");
-  let s=toMin(start.value), e=toMin(end.value);
-  if(e<=s)return alert("時間不正");
-
-  let used=e-s;
-
-  if(breakSelect.value){
-    const b=breaks[breakSelect.value];
-    used-=overlap(s,e,toMin(b.start),toMin(b.end));
+  if(
+    $("date").value === "" ||
+    $("start").value === "" ||
+    $("end").value === ""
+  ){
+    alert("未入力");
+    return;
   }
 
-  const w=works[workSelect.value];
-  const workMin=toMin(w.end)-toMin(w.start);
+  let s = toMin($("start").value);
+  let e = toMin($("end").value);
+  if(e <= s){
+    alert("時間が不正です");
+    return;
+  }
 
-  if(s===toMin(w.start)&&e===toMin(w.end)){
-    used=workMin;
+  let used = e - s;
+
+  if($("breakSelect").value !== ""){
+    const b = breaks[$("breakSelect").value];
+    used -= overlap(s, e, toMin(b.start), toMin(b.end));
+  }
+
+  const w = works[$("workSelect").value];
+  const workMin = toMin(w.end) - toMin(w.start);
+
+  if(s === toMin(w.start) && e === toMin(w.end)){
+    used = DAY_MIN; // 1日扱い
   }else{
-    used=Math.ceil(used/60)*60;
+    used = Math.ceil(used / 60) * 60;
   }
 
-  user.total-=used;
-  user.history.unshift({date:date.value,used});
-  localStorage.setItem("user",JSON.stringify(user));
+  user.total -= used;
+  user.history.unshift({date: $("date").value, used});
+  localStorage.setItem("user", JSON.stringify(user));
   render();
 }
 
+/* ===== 表示 ===== */
 function render(){
-  const d=Math.floor(user.total/DAY_MIN);
-  const r=user.total%DAY_MIN;
-  remain.textContent=`${d}日${Math.floor(r/60)}時間${r%60}分`;
+  const d = Math.floor(user.total / DAY_MIN);
+  const r = user.total % DAY_MIN;
+  $("remain").textContent =
+    `${d}日${Math.floor(r/60)}時間${r%60}分`;
 
-  history.innerHTML="";
+  $("history").innerHTML = "";
   user.history.forEach((h,i)=>{
-    const isDay=h.used===DAY_MIN;
-    const txt=isDay?"1日":`${Math.floor(h.used/60)}時間${h.used%60}分`;
-    const div=document.createElement("div");
-    div.className="history";
-    div.innerHTML=`<span>${h.date}</span><span>${txt}</span>`;
-    div.onclick=()=>{
+    const isDay = h.used === DAY_MIN;
+    const txt = isDay ? "1日" :
+      `${Math.floor(h.used/60)}時間${h.used%60}分`;
+
+    const div = document.createElement("div");
+    div.className = "history";
+    div.innerHTML = `<span>${h.date}</span><span>${txt}</span>`;
+
+    div.onclick = ()=>{
       if(confirm("削除しますか？")){
-        user.total+=h.used;
+        user.total += h.used;
         user.history.splice(i,1);
-        localStorage.setItem("user",JSON.stringify(user));
+        localStorage.setItem("user", JSON.stringify(user));
         render();
       }
     };
-    history.appendChild(div);
+    $("history").appendChild(div);
   });
 }
 
+/* ===== リセット ===== */
 function resetUser(){
   if(confirm("初期設定をやり直しますか？")){
     localStorage.removeItem("user");
@@ -170,6 +238,7 @@ function resetUser(){
   }
 }
 
+/* ===== 管理者設定 ===== */
 function openAdmin(){
   window.open("admin.html","_blank");
 }
