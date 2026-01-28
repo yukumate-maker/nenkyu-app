@@ -21,14 +21,18 @@ body{
 }
 h2{text-align:center;margin:8px 0 16px;color:#2c7be5}
 h3{margin:0 0 8px;font-size:15px}
+
+/* ★ はみ出し完全防止（最重要） */
 input,select,button{
   width:100%;
   padding:12px;
   font-size:15px;
   border-radius:12px;
   border:1px solid #ccc;
-  margin-top:8px
+  margin-top:8px;
+  box-sizing:border-box;
 }
+
 button{border:none;font-weight:600}
 .primary{background:#2c7be5;color:#fff}
 .sub{background:#6c757d;color:#fff}
@@ -41,13 +45,6 @@ button{border:none;font-weight:600}
   padding:8px 4px;
   border-bottom:1px solid #eee;
   font-size:14px
-}
-
-/* ★ 小指1本分だけ左を短く */
-#name,
-#days,
-#date{
-  padding-left:8px;
 }
 
 /* ===== モーダル ===== */
@@ -176,13 +173,13 @@ if(user) start();
 
 /* 初期設定 */
 function saveSetup(){
-  if(!name.value || !days.value){
+  if(!$("name").value || !$("days").value){
     alert("入力してください");
     return;
   }
   user = {
-    name: name.value,
-    total: Number(days.value) * DAY_MIN,
+    name: $("name").value,
+    total: Number($("days").value) * DAY_MIN,
     history: []
   };
   localStorage.setItem("user", JSON.stringify(user));
@@ -190,125 +187,117 @@ function saveSetup(){
 }
 
 function start(){
-  setup.style.display = "none";
-  main.style.display = "block";
-  title.textContent = `${user.name}さんの年休`;
+  $("setup").style.display = "none";
+  $("main").style.display = "block";
+  $("title").textContent = `${user.name}さんの年休`;
   loadSelects();
   render();
 }
 
 function loadSelects(){
-  workSelect.innerHTML = "";
-  if(works.length === 0){
-    workSelect.innerHTML = `<option value="">就業時間を設定してください</option>`;
-  }else{
-    works.forEach((w,i)=>{
-      workSelect.innerHTML += `<option value="${i}">${w.name} ${w.start}〜${w.end}</option>`;
-    });
-  }
+  $("workSelect").innerHTML = works.length
+    ? works.map((w,i)=>`<option value="${i}">${w.name} ${w.start}〜${w.end}</option>`).join("")
+    : `<option value="">就業時間を設定してください</option>`;
 
-  breakSelect.innerHTML = `<option value="">休憩なし</option>`;
-  breaks.forEach((b,i)=>{
-    breakSelect.innerHTML += `<option value="${i}">${b.name} ${b.start}〜${b.end}</option>`;
-  });
+  $("breakSelect").innerHTML =
+    `<option value="">休憩なし</option>` +
+    breaks.map((b,i)=>`<option value="${i}">${b.name} ${b.start}〜${b.end}</option>`).join("");
 }
 
 function toMin(t){
   const [h,m] = t.split(":").map(Number);
-  return h*60 + m;
+  return h*60+m;
 }
 function overlap(a,b,c,d){
   return Math.max(0, Math.min(b,d) - Math.max(a,c));
 }
 
-/* ★ 登録が必ず動くよう修正 */
 function useLeave(){
-  if(!date.value || !start.value || !end.value){
+  if(!$("date").value || !$("start").value || !$("end").value){
     alert("未入力です");
     return;
   }
-  if(workSelect.value === ""){
+  if($("workSelect").value===""){
     alert("就業時間を選択してください");
     return;
   }
 
-  let s = toMin(start.value);
-  let e = toMin(end.value);
-  if(e <= s){
+  const s = toMin($("start").value);
+  const e = toMin($("end").value);
+  if(e<=s){
     alert("時間が不正です");
     return;
   }
 
-  const w = works[workSelect.value];
+  const w = works[$("workSelect").value];
   let used;
 
-  if(s === toMin(w.start) && e === toMin(w.end)){
-    used = DAY_MIN; // 1日
+  if(s===toMin(w.start)&&e===toMin(w.end)){
+    used = DAY_MIN;
   }else{
-    used = e - s;
-    if(breakSelect.value !== ""){
-      const b = breaks[breakSelect.value];
-      used -= overlap(s, e, toMin(b.start), toMin(b.end));
+    used = e-s;
+    if($("breakSelect").value!==""){
+      const b = breaks[$("breakSelect").value];
+      used -= overlap(s,e,toMin(b.start),toMin(b.end));
     }
-    used = Math.ceil(used / 60) * 60;
+    used = Math.ceil(used/60)*60;
   }
 
   user.total -= used;
-  user.history.unshift({date: date.value, used});
-  localStorage.setItem("user", JSON.stringify(user));
+  user.history.unshift({date:$("date").value,used});
+  localStorage.setItem("user",JSON.stringify(user));
   render();
 }
 
 function render(){
-  const d = Math.floor(user.total / DAY_MIN);
-  const r = user.total % DAY_MIN;
-  remain.textContent = `${d}日${Math.floor(r/60)}時間${r%60}分`;
+  const d = Math.floor(user.total/DAY_MIN);
+  const r = user.total%DAY_MIN;
+  $("remain").textContent = `${d}日${Math.floor(r/60)}時間${r%60}分`;
 
-  history.innerHTML = "";
+  $("history").innerHTML="";
   user.history.forEach((h,i)=>{
-    const txt = h.used === DAY_MIN ? "1日" : `${Math.floor(h.used/60)}時間`;
-    const div = document.createElement("div");
-    div.className = "history";
-    div.innerHTML = `<span>${h.date}</span><span>${txt}</span>`;
-    div.onclick = ()=>{
-      user.total += h.used;
+    const div=document.createElement("div");
+    div.className="history";
+    div.innerHTML=`<span>${h.date}</span><span>${h.used===DAY_MIN?"1日":Math.floor(h.used/60)+"時間"}</span>`;
+    div.onclick=()=>{
+      user.total+=h.used;
       user.history.splice(i,1);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user",JSON.stringify(user));
       render();
     };
-    history.appendChild(div);
+    $("history").appendChild(div);
   });
 }
 
 /* 設定 */
-function openModal(){modal.style.display="flex";showMenu()}
-function closeModal(){modal.style.display="none";loadSelects()}
-function showMenu(){menu.style.display="block";workSet.style.display=breakSet.style.display="none"}
-function showWork(){menu.style.display="none";workSet.style.display="block";renderWorks()}
-function showBreak(){menu.style.display="none";breakSet.style.display="block";renderBreaks()}
+function openModal(){ $("modal").style.display="flex"; showMenu(); }
+function closeModal(){ $("modal").style.display="none"; loadSelects(); }
+function showMenu(){ $("menu").style.display="block"; $("workSet").style.display=$("breakSet").style.display="none"; }
+function showWork(){ $("menu").style.display="none"; $("workSet").style.display="block"; renderWorks(); }
+function showBreak(){ $("menu").style.display="none"; $("breakSet").style.display="block"; renderBreaks(); }
 
 function addWork(){
-  works.push({name:wName.value,start:wStart.value,end:wEnd.value});
+  works.push({name:$("wName").value,start:$("wStart").value,end:$("wEnd").value});
   localStorage.setItem("works",JSON.stringify(works));
   renderWorks();
 }
 function renderWorks(){
-  workList.innerHTML="";
+  $("workList").innerHTML="";
   works.forEach((w,i)=>{
-    workList.innerHTML+=`<div>${w.name} ${w.start}-${w.end}
-      <span onclick="works.splice(${i},1);localStorage.setItem('works',JSON.stringify(works));renderWorks()">削除</span></div>`;
+    $("workList").innerHTML+=`<div>${w.name} ${w.start}-${w.end}
+    <span onclick="works.splice(${i},1);localStorage.setItem('works',JSON.stringify(works));renderWorks()">削除</span></div>`;
   });
 }
 function addBreak(){
-  breaks.push({name:bName.value,start:bStart.value,end:bEnd.value});
+  breaks.push({name:$("bName").value,start:$("bStart").value,end:$("bEnd").value});
   localStorage.setItem("breaks",JSON.stringify(breaks));
   renderBreaks();
 }
 function renderBreaks(){
-  breakList.innerHTML="";
+  $("breakList").innerHTML="";
   breaks.forEach((b,i)=>{
-    breakList.innerHTML+=`<div>${b.name} ${b.start}-${b.end}
-      <span onclick="breaks.splice(${i},1);localStorage.setItem('breaks',JSON.stringify(breaks));renderBreaks()">削除</span></div>`;
+    $("breakList").innerHTML+=`<div>${b.name} ${b.start}-${b.end}
+    <span onclick="breaks.splice(${i},1);localStorage.setItem('breaks',JSON.stringify(breaks));renderBreaks()">削除</span></div>`;
   });
 }
 
