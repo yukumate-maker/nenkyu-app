@@ -48,7 +48,7 @@ button{border:none;font-weight:600}
 }
 .history:hover{background:#f8f9fa}
 
-/* ★ 初期設定の入力を少し左へ */
+/* 初期設定の入力を少し左へ */
 #setup input{
   padding-left:8px;
 }
@@ -93,7 +93,8 @@ button{border:none;font-weight:600}
   </div>
 
   <div class="card">
-    <button class="sub" onclick="openAdmin()">管理者設定</button>
+    <!-- ★ ここ変更 -->
+    <button class="sub" onclick="openAdmin()">設定</button>
     <button class="danger" style="margin-top:12px" onclick="resetUser()">初期設定をやり直す</button>
   </div>
 
@@ -162,7 +163,7 @@ function overlap(a,b,c,d){
 function useLeave(){
 
   if(works.length === 0){
-    alert("管理者設定で就業時間を登録してください");
+    alert("設定で就業時間を登録してください");
     return;
   }
 
@@ -226,6 +227,7 @@ function render(){
   });
 }
 
+/* リセット */
 function resetUser(){
   if(confirm("初期設定をやり直しますか？")){
     localStorage.removeItem("user");
@@ -233,10 +235,10 @@ function resetUser(){
   }
 }
 
+/* ★ 設定（404防止） */
 function openAdmin(){
-  window.open("admin.html","_blank");
+  alert("※ 設定画面は今後追加予定です。\n現在はこの画面のみ使用できます。");
 }
 </script>
 </body>
 </html>
-
