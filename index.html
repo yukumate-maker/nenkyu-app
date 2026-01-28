@@ -5,10 +5,6 @@
 <title>年休アプリ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="年休">
-<meta name="theme-color" content="#2c7be5">
-
 <style>
 body{
   margin:0;
@@ -46,11 +42,43 @@ button{border:none;font-weight:600}
   border-bottom:1px solid #eee;
   font-size:14px
 }
-.history:hover{background:#f8f9fa}
 
-/* 初期設定の入力を少し左へ */
-#setup input{
-  padding-left:8px;
+/* ★ 左位置と縦位置を微調整 */
+#setup input,
+#date{
+  margin-left:4px;
+}
+
+/* ===== モーダル ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal-content{
+  background:#fff;
+  width:90%;
+  max-width:420px;
+  border-radius:18px;
+  padding:16px;
+}
+.close{
+  text-align:right;
+  font-size:14px;
+  color:#666;
+}
+.list{
+  margin-top:10px;
+  border-top:1px solid #eee;
+}
+.list div{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  font-size:14px;
 }
 </style>
 </head>
@@ -88,156 +116,142 @@ button{border:none;font-weight:600}
   </div>
 
   <div class="card">
-    <h3>使用履歴（タップで削除）</h3>
+    <h3>使用履歴</h3>
     <div id="history"></div>
   </div>
 
   <div class="card">
-    <!-- ★ ここ変更 -->
-    <button class="sub" onclick="openAdmin()">設定</button>
+    <button class="sub" onclick="openModal()">設定</button>
     <button class="danger" style="margin-top:12px" onclick="resetUser()">初期設定をやり直す</button>
   </div>
 
 </div>
 </div>
 
-<script>
-const DAY_MIN = 465;
-const $ = id => document.getElementById(id);
+<!-- ===== 設定モーダル ===== -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="close" onclick="closeModal()">× 閉じる</div>
 
-let user = JSON.parse(localStorage.getItem("user"));
-const works = JSON.parse(localStorage.getItem("works") || "[]");
-const breaks = JSON.parse(localStorage.getItem("breaks") || "[]");
+    <div id="menu">
+      <button class="primary" onclick="showWork()">就業時間設定</button>
+      <button class="sub" style="margin-top:10px" onclick="showBreak()">休憩時間設定</button>
+    </div>
+
+    <!-- 就業 -->
+    <div id="workSet" style="display:none">
+      <h3>就業時間</h3>
+      <input id="wName" placeholder="名目">
+      <div class="row">
+        <input type="time" id="wStart">
+        <input type="time" id="wEnd">
+      </div>
+      <button class="primary" onclick="addWork()">追加</button>
+      <div class="list" id="workList"></div>
+    </div>
+
+    <!-- 休憩 -->
+    <div id="breakSet" style="display:none">
+      <h3>休憩時間</h3>
+      <input id="bName" placeholder="名目">
+      <div class="row">
+        <input type="time" id="bStart">
+        <input type="time" id="bEnd">
+      </div>
+      <button class="primary" onclick="addBreak()">追加</button>
+      <div class="list" id="breakList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DAY_MIN=465;
+const $=id=>document.getElementById(id);
+
+let user=JSON.parse(localStorage.getItem("user"));
+let works=JSON.parse(localStorage.getItem("works")||"[]");
+let breaks=JSON.parse(localStorage.getItem("breaks")||"[]");
 
 if(user) start();
 
-/* 初期設定 */
 function saveSetup(){
-  if(!$("name").value || !$("days").value){
-    alert("入力してください");
-    return;
-  }
-  user = {
-    name: $("name").value,
-    total: Number($("days").value) * DAY_MIN,
-    history: []
-  };
-  localStorage.setItem("user", JSON.stringify(user));
+  if(!$("name").value||!$("days").value)return alert("入力してください");
+  user={name:$("name").value,total:$("days").value*DAY_MIN,history:[]};
+  localStorage.setItem("user",JSON.stringify(user));
   start();
 }
-
-/* 起動 */
 function start(){
-  $("setup").style.display = "none";
-  $("main").style.display = "block";
-  $("title").textContent = `${user.name}さんの年休`;
-  loadSelects();
-  render();
+  $("setup").style.display="none";
+  $("main").style.display="block";
+  $("title").textContent=`${user.name}さんの年休`;
+  loadSelects();render();
 }
-
-/* セレクト */
 function loadSelects(){
-  $("workSelect").innerHTML = "";
-  works.forEach((w,i)=>{
-    $("workSelect").innerHTML +=
-      `<option value="${i}">${w.name} ${w.start}〜${w.end}</option>`;
-  });
-
-  $("breakSelect").innerHTML = `<option value="">休憩なし</option>`;
-  breaks.forEach((b,i)=>{
-    $("breakSelect").innerHTML +=
-      `<option value="${i}">${b.name} ${b.start}〜${b.end}</option>`;
-  });
+  $("workSelect").innerHTML="";
+  works.forEach((w,i)=>$("workSelect").innerHTML+=`<option value=${i}>${w.name} ${w.start}〜${w.end}</option>`);
+  $("breakSelect").innerHTML='<option value="">休憩なし</option>';
+  breaks.forEach((b,i)=>$("breakSelect").innerHTML+=`<option value=${i}>${b.name} ${b.start}〜${b.end}</option>`);
 }
-
-/* 時間 */
-function toMin(t){
-  const [h,m] = t.split(":").map(Number);
-  return h*60+m;
-}
-function overlap(a,b,c,d){
-  return Math.max(0, Math.min(b,d) - Math.max(a,c));
-}
-
-/* 年休取得 */
+function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
+function overlap(a,b,c,d){return Math.max(0,Math.min(b,d)-Math.max(a,c))}
 function useLeave(){
-
-  if(works.length === 0){
-    alert("設定で就業時間を登録してください");
-    return;
+  if(!$("date").value||!$("start").value||!$("end").value)return alert("未入力");
+  let s=toMin(start.value),e=toMin(end.value),used=e-s;
+  if(breakSelect.value!==""){
+    let b=breaks[breakSelect.value];
+    used-=overlap(s,e,toMin(b.start),toMin(b.end));
   }
-
-  if(!$("date").value || !$("start").value || !$("end").value){
-    alert("未入力");
-    return;
-  }
-
-  let s = toMin($("start").value);
-  let e = toMin($("end").value);
-  if(e <= s){
-    alert("時間が不正です");
-    return;
-  }
-
-  let used = e - s;
-
-  if($("breakSelect").value !== ""){
-    const b = breaks[$("breakSelect").value];
-    used -= overlap(s, e, toMin(b.start), toMin(b.end));
-  }
-
-  const w = works[$("workSelect").value];
-  if(s === toMin(w.start) && e === toMin(w.end)){
-    used = DAY_MIN;
-  }else{
-    used = Math.ceil(used / 60) * 60;
-  }
-
-  user.total -= used;
-  user.history.unshift({date:$("date").value, used});
-  localStorage.setItem("user", JSON.stringify(user));
+  user.total-=Math.ceil(used/60)*60;
+  user.history.unshift({date:date.value,used});
+  localStorage.setItem("user",JSON.stringify(user));
   render();
 }
-
-/* 表示 */
 function render(){
-  const d = Math.floor(user.total / DAY_MIN);
-  const r = user.total % DAY_MIN;
-  $("remain").textContent =
-    `${d}日${Math.floor(r/60)}時間${r%60}分`;
-
-  $("history").innerHTML = "";
+  $("remain").textContent=
+    `${Math.floor(user.total/DAY_MIN)}日${Math.floor(user.total%DAY_MIN/60)}時間${user.total%60}分`;
+  history.innerHTML="";
   user.history.forEach((h,i)=>{
-    const txt = h.used === DAY_MIN
-      ? "1日"
-      : `${Math.floor(h.used/60)}時間${h.used%60}分`;
-
-    const div = document.createElement("div");
-    div.className = "history";
-    div.innerHTML = `<span>${h.date}</span><span>${txt}</span>`;
-    div.onclick = ()=>{
-      if(confirm("削除しますか？")){
-        user.total += h.used;
-        user.history.splice(i,1);
-        localStorage.setItem("user", JSON.stringify(user));
-        render();
-      }
-    };
-    $("history").appendChild(div);
+    let d=document.createElement("div");
+    d.className="history";
+    d.innerHTML=`<span>${h.date}</span><span>${Math.floor(h.used/60)}時間</span>`;
+    d.onclick=()=>{user.total+=h.used;user.history.splice(i,1);localStorage.setItem("user",JSON.stringify(user));render()}
+    history.appendChild(d);
   });
 }
 
-/* リセット */
+/* ===== 設定 ===== */
+function openModal(){modal.style.display="flex";showMenu()}
+function closeModal(){modal.style.display="none";loadSelects()}
+function showMenu(){menu.style.display="block";workSet.style.display=breakSet.style.display="none"}
+function showWork(){menu.style.display="none";workSet.style.display="block";renderWorks()}
+function showBreak(){menu.style.display="none";breakSet.style.display="block";renderBreaks()}
+
+function addWork(){
+  works.push({name:wName.value,start:wStart.value,end:wEnd.value});
+  localStorage.setItem("works",JSON.stringify(works));
+  renderWorks();
+}
+function renderWorks(){
+  workList.innerHTML="";
+  works.forEach((w,i)=>workList.innerHTML+=
+    `<div>${w.name} ${w.start}-${w.end}<span onclick="works.splice(${i},1);localStorage.setItem('works',JSON.stringify(works));renderWorks()">削除</span></div>`);
+}
+function addBreak(){
+  breaks.push({name:bName.value,start:bStart.value,end:bEnd.value});
+  localStorage.setItem("breaks",JSON.stringify(breaks));
+  renderBreaks();
+}
+function renderBreaks(){
+  breakList.innerHTML="";
+  breaks.forEach((b,i)=>breakList.innerHTML+=
+    `<div>${b.name} ${b.start}-${b.end}<span onclick="breaks.splice(${i},1);localStorage.setItem('breaks',JSON.stringify(breaks));renderBreaks()">削除</span></div>`);
+}
+
 function resetUser(){
   if(confirm("初期設定をやり直しますか？")){
-    localStorage.removeItem("user");
-    location.reload();
+    localStorage.clear();location.reload();
   }
-}
-
-/* ★ 設定（404防止） */
-function openAdmin(){
-  alert("※ 設定画面は今後追加予定です。\n現在はこの画面のみ使用できます。");
 }
 </script>
 </body>
