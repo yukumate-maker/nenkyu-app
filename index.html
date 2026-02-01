@@ -125,7 +125,7 @@ button{border:none;font-weight:600}
 
     <div id="workSet" style="display:none">
       <h3>就業時間</h3>
-      <input id="wName" placeholder="名目">
+      <input id="wName" placeholder="〇〇〇学校">
       <div class="row">
         <input type="time" id="wStart">
         <input type="time" id="wEnd">
@@ -136,7 +136,7 @@ button{border:none;font-weight:600}
 
     <div id="breakSet" style="display:none">
       <h3>休憩時間</h3>
-      <input id="bName" placeholder="名目">
+      <input id="bName" placeholder="〇校時">
       <div class="row">
         <input type="time" id="bStart">
         <input type="time" id="bEnd">
@@ -271,7 +271,7 @@ function renderBreaks(){
 }
 
 function resetUser(){
-  if(confirm("初期設定をやり直しますか？\n※就業時間・休憩時間は保持されます")){
+  if(confirm("年休時間を変更しますか？\n※就業時間・休憩時間は保持されます")){
     localStorage.removeItem("user");
     location.reload();
   }
@@ -279,3 +279,4 @@ function resetUser(){
 </script>
 </body>
 </html>
+
