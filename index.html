@@ -1,3 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>年休アプリ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  background:#f0f2f5
+}
+.container{max-width:480px;margin:auto;padding:14px}
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,.05)
+}
+h2{text-align:center;margin:8px 0 16px;color:#2c7be5}
+h3{margin:0 0 8px;font-size:15px}
+
+input,select,button{
+  width:100%;
+  padding:12px;
+  font-size:15px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  margin-top:8px;
+  box-sizing:border-box;
+}
+
+button{border:none;font-weight:600}
+.primary{background:#2c7be5;color:#fff}
+.sub{background:#6c757d;color:#fff}
+.danger{background:#dc3545;color:#fff}
+.row{display:flex;gap:8px}
+.row > *{flex:1}
+.history{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 4px;
+  border-bottom:1px solid #eee;
+  font-size:14px
+}
+.small{font-size:12px;color:#666}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2 id="title">年休アプリ</h2>
+
+<!-- 初期設定 -->
+<div class="card" id="setup">
+  <h3>初期設定</h3>
+  <input id="name" placeholder="名前">
+  <div class="row">
+    <input id="initDay" type="number" placeholder="日">
+    <input id="initHour" type="number" placeholder="時間">
+    <input id="initMin" type="number" placeholder="分">
+  </div>
+  <button class="primary" onclick="saveSetup()">開始</button>
+</div>
+
+<div id="main" style="display:none">
+
+  <div class="card" style="text-align:center">
+    <h3>残日数</h3>
+    <b id="remain" style="font-size:22px"></b>
+  </div>
+
+  <div class="card">
+    <h3>年休取得</h3>
+    <input type="date" id="date">
+    <div class="row">
+      <input type="time" id="start">
+      <input type="time" id="end">
+    </div>
+    <select id="workSelect"></select>
+    <select id="breakSelect"></select>
+    <button class="primary" onclick="useLeave()">登録</button>
+  </div>
+
+  <div class="card">
+    <h3>使用履歴</h3>
+    <div id="history"></div>
+  </div>
+
+  <div class="card">
+    <button class="sub" onclick="openModal()">設定</button>
+    <button class="danger" style="margin-top:12px" onclick="resetUser()">初期設定をやり直す</button>
+  </div>
+
+</div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="close" onclick="closeModal()">× 閉じる</div>
+
+    <div id="menu">
+      <button class="primary" onclick="showWork()">就業時間設定</button>
+      <button class="sub" style="margin-top:10px" onclick="showBreak()">休憩時間設定</button>
+    </div>
+
+    <div id="workSet" style="display:none">
+      <h3>就業時間</h3>
+      <input id="wName" placeholder="名目">
+      <div class="row">
+        <input type="time" id="wStart">
+        <input type="time" id="wEnd">
+      </div>
+      <button class="primary" onclick="addWork()">追加</button>
+      <div class="list" id="workList"></div>
+    </div>
+
+    <div id="breakSet" style="display:none">
+      <h3>休憩時間</h3>
+      <input id="bName" placeholder="名目">
+      <div class="row">
+        <input type="time" id="bStart">
+        <input type="time" id="bEnd">
+      </div>
+      <button class="primary" onclick="addBreak()">追加</button>
+      <div class="list" id="breakList"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const DAY_MIN = 465;
 const $ = id => document.getElementById(id);
@@ -168,6 +301,7 @@ function resetUser(){
     location.reload();
   }
 }
+
 </script>
 </body>
 </html>
